@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>你的"附近"人格查询器 | NCT测试</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f7f7fc;--card:#ffffff;--card2:#f0f0f8;--accent:#6c5ce7;--accent2:#5a4bd1;--green:#00b894;--pink:#e84393;--orange:#e17055;--text:#2d3436;--dim:#636e72;--glow:rgba(108,92,231,.18);--shadow:0 2px 12px rgba(0,0,0,.06);--shadow-lg:0 8px 30px rgba(0,0,0,.1)}
+body{font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* BG */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+.bg .o{position:absolute;border-radius:50%;filter:blur(100px);opacity:.15;animation:drift 22s infinite ease-in-out}
+.bg .o:nth-child(1){width:420px;height:420px;background:#a29bfe;top:-120px;left:-80px}
+.bg .o:nth-child(2){width:360px;height:360px;background:#55efc4;bottom:-100px;right:-60px;animation-delay:-8s}
+.bg .o:nth-child(3){width:280px;height:280px;background:#fd79a8;top:40%;left:60%;animation-delay:-15s}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.08)}66%{transform:translate(-30px,30px) scale(.94)}}
+
+.wrap{position:relative;z-index:1;max-width:600px;margin:0 auto;padding:20px;min-height:100vh;display:flex;flex-direction:column}
+
+/* Progress */
+.top-bar{margin-bottom:24px}
+.top-row{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:6px;font-weight:500}
+.prog{width:100%;height:4px;background:rgba(0,0,0,.06);border-radius:2px;overflow:hidden}
+.prog .bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:2px;transition:width .5s ease}
+
+/* Stage tag */
+.stag{display:inline-block;font-size:11px;padding:4px 14px;border-radius:20px;font-weight:600;margin-bottom:12px}
+.stag.s1{background:rgba(108,92,231,.08);color:var(--accent)}
+.stag.s2{background:rgba(0,184,148,.08);color:var(--green)}
+.stag.s3{background:rgba(232,67,147,.08);color:var(--pink)}
+.stag.s4{background:rgba(225,112,85,.08);color:var(--orange)}
+
+/* Question area */
+.q-area{flex:1;display:flex;flex-direction:column;justify-content:center;animation:fadeUp .4s ease}
+.q-text{font-size:18px;font-weight:700;line-height:1.8;margin-bottom:8px;color:#1a1a2e}
+.q-num{color:var(--accent);margin-right:4px}
+.q-hint{font-size:13px;color:var(--dim);margin-bottom:14px;line-height:1.6}
+
+/* Options */
+.opts{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.obtn{background:var(--card);border:2px solid rgba(0,0,0,.06);border-radius:14px;padding:14px 16px;font-size:15px;line-height:1.6;color:var(--text);cursor:pointer;transition:all .2s;text-align:left;font-family:inherit;display:flex;align-items:flex-start;gap:10px;box-shadow:var(--shadow)}
+.obtn:hover{border-color:rgba(108,92,231,.25);background:#fafafe;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.obtn.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow);background:rgba(108,92,231,.04)}
+.obtn .lt{flex-shrink:0;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;font-size:12px;font-weight:700;background:rgba(108,92,231,.1);color:var(--accent);transition:all .2s}
+.obtn.sel .lt{background:var(--accent);color:#fff}
+.obtn.ck .lt{border-radius:6px;font-size:13px;border:2px solid rgba(0,0,0,.12);background:transparent;color:transparent;width:24px;height:24px;line-height:18px}
+.obtn.ck.on .lt{border-color:var(--green);background:var(--green);color:#fff}
+.obtn.ck.on{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,184,148,.15)}
+
+/* Rating */
+.rrow{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.rrow .rl{flex:1;font-size:14px;line-height:1.6;color:#2d3436}
+.rrow .rv{display:flex;gap:6px;flex-shrink:0}
+.rbtn{width:36px;height:36px;border-radius:10px;border:2px solid rgba(0,0,0,.08);background:var(--card);color:var(--dim);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit}
+.rbtn:hover{border-color:rgba(108,92,231,.3)}
+.rbtn.on{border-color:var(--accent);background:rgba(108,92,231,.08);color:var(--accent);font-weight:800}
+
+/* Text input */
+.tinput{width:100%;background:var(--card);border:2px solid rgba(0,0,0,.08);border-radius:14px;padding:14px 16px;font-size:15px;color:var(--text);font-family:inherit;resize:vertical;min-height:90px;outline:none;transition:border-color .2s;box-shadow:var(--shadow)}
+.tinput:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+.tinput::placeholder{color:#b2bec3}
+
+/* Nav */
+.nav{display:flex;justify-content:space-between;align-items:center;padding:20px 0}
+.nbtn{padding:11px 26px;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;border:none}
+.nbtn.prev{background:var(--card);border:1px solid rgba(0,0,0,.1);color:var(--dim);box-shadow:var(--shadow)}
+.nbtn.prev:hover{border-color:rgba(0,0,0,.2);color:var(--text)}
+.nbtn.next{background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;box-shadow:0 2px 12px var(--glow)}
+.nbtn.next:hover{box-shadow:0 6px 24px var(--glow);transform:translateY(-1px)}
+.nbtn.next:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.nbtn.submit{background:linear-gradient(135deg,var(--accent),var(--green));color:#fff;padding:13px 34px;font-size:15px;box-shadow:0 2px 16px var(--glow)}
+
+/* Intro */
+.intro{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center}
+.intro .logo{font-size:64px;margin-bottom:12px}
+.intro h1{font-size:30px;font-weight:900;background:linear-gradient(135deg,var(--accent),#00b894);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.intro .sub{font-size:13px;color:var(--dim);letter-spacing:4px;text-transform:uppercase;margin-bottom:24px;font-weight:500}
+.intro .desc{font-size:14px;color:#636e72;line-height:2;max-width:460px;margin-bottom:30px}
+.dims{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:420px;margin-bottom:30px}
+.dcard{background:var(--card);border-radius:12px;padding:14px;text-align:left;border:1px solid rgba(0,0,0,.05);box-shadow:var(--shadow)}
+.dcard .dl{font-size:11px;color:var(--dim);margin-bottom:4px}
+.dcard .dv{font-size:13px;font-weight:700}
+.dcard .dv .vs{color:#b2bec3;font-weight:400;margin:0 4px}
+.start-btn{background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;border:none;padding:15px 44px;border-radius:50px;font-size:17px;font-weight:800;cursor:pointer;transition:all .3s;box-shadow:0 4px 24px var(--glow);font-family:inherit}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--glow)}
+
+/* Result */
+.result{display:none;flex-direction:column;align-items:center;min-height:100vh;padding-top:30px;text-align:center;animation:fadeUp .6s ease}
+.result.show{display:flex}
+.result .illust{margin-bottom:20px}
+.result .rcode{font-size:52px;font-weight:900;letter-spacing:6px;background:linear-gradient(135deg,var(--accent),#00b894);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;animation:fadeUp .8s ease}
+.result .rname{font-size:22px;font-weight:800;color:#1a1a2e;margin-bottom:14px;animation:fadeUp .8s ease .1s both}
+.result .rmotto{font-size:15px;color:var(--accent);font-style:italic;margin-bottom:22px;font-weight:500;animation:fadeUp .8s ease .15s both}
+.result .rdesc{font-size:14px;line-height:2.1;color:#636e72;max-width:440px;margin-bottom:28px;animation:fadeUp .8s ease .2s both}
+.result .rdims{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:420px;margin-bottom:30px;animation:fadeUp .8s ease .25s both}
+.rdim{background:var(--card);border-radius:12px;padding:14px;text-align:center;border:1px solid rgba(0,0,0,.05);box-shadow:var(--shadow)}
+.rdim .rl{font-size:11px;color:var(--dim);margin-bottom:3px}
+.rdim .rv{font-size:16px;font-weight:800}
+.rdim .rs{font-size:11px;color:#b2bec3;margin-top:3px}
+.rbtn2{background:var(--card);border:2px solid rgba(0,0,0,.08);color:var(--dim);padding:11px 30px;border-radius:50px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;margin-bottom:40px;box-shadow:var(--shadow);animation:fadeUp .8s ease .3s both}
+.rbtn2:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Admin */
+.admin-btn{position:fixed;top:12px;right:12px;z-index:10;background:var(--card);border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:7px 14px;font-size:11px;color:var(--dim);cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:var(--shadow)}
+.admin-btn:hover{border-color:var(--accent);color:var(--accent)}
+.admin{min-height:100vh;padding-top:10px}
+.admin h2{font-size:20px;font-weight:800;color:#1a1a2e;margin-bottom:4px}
+.admin .sub{font-size:13px;color:var(--dim);margin-bottom:20px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.stat-card{background:var(--card);border-radius:12px;padding:16px;border:1px solid rgba(0,0,0,.05);box-shadow:var(--shadow)}
+.stat-card .sl{font-size:11px;color:var(--dim);margin-bottom:3px}
+.stat-card .sv{font-size:24px;font-weight:800}
+.chart-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.chart-box{background:var(--card);border-radius:14px;padding:18px;flex:1;min-width:260px;border:1px solid rgba(0,0,0,.05);box-shadow:var(--shadow)}
+.chart-box h3{font-size:13px;font-weight:700;margin-bottom:10px;color:#1a1a2e}
+.chart-box svg{width:100%}
+.tbl-wrap{overflow-x:auto;margin-bottom:20px}
+.tbl-wrap table{width:100%;border-collapse:collapse;font-size:12px}
+.tbl-wrap th{background:var(--card2);padding:8px 6px;text-align:left;font-weight:700;white-space:nowrap;border-bottom:2px solid rgba(0,0,0,.08);color:#2d3436}
+.tbl-wrap td{padding:7px;border-bottom:1px solid rgba(0,0,0,.04);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;color:#2d3436}
+.exp-row{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.exp-btn{background:var(--card);border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--text);cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:var(--shadow);font-weight:500}
+.exp-btn:hover{border-color:var(--accent);color:var(--accent)}
+.q-stat{background:var(--card);border-radius:14px;padding:18px;margin-bottom:14px;border:1px solid rgba(0,0,0,.05);box-shadow:var(--shadow);animation:fadeUp .3s ease}
+.q-stat .qs-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.q-stat .qs-num{font-size:11px;color:var(--accent);font-weight:700}
+.q-stat .qs-type{font-size:10px;color:var(--dim);background:rgba(0,0,0,.04);padding:3px 10px;border-radius:10px;font-weight:500}
+.q-stat .qs-text{font-size:14px;font-weight:700;line-height:1.6;margin-bottom:12px;color:#1a1a2e}
+.q-stat .qs-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.q-stat .qs-lbl{flex-shrink:0;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;font-size:11px;font-weight:700;background:rgba(108,92,231,.08);color:var(--accent)}
+.q-stat .qs-bar-wrap{flex:1;height:22px;background:rgba(0,0,0,.03);border-radius:6px;overflow:hidden;position:relative}
+.q-stat .qs-bar{height:100%;border-radius:6px;transition:width .5s ease;min-width:2px}
+.q-stat .qs-bar-text{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:#2d3436;white-space:nowrap;font-weight:600}
+.q-stat .qs-opt{font-size:12px;line-height:1.5;color:var(--dim);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.q-stat .qs-avg{font-size:12px;color:var(--accent);font-weight:700}
+.section-title{font-size:16px;font-weight:800;margin:28px 0 14px;padding-bottom:8px;border-bottom:2px solid rgba(0,0,0,.06);color:#1a1a2e}
+
+/* Filter end */
+.fend{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center}
+.fend.show{display:flex}
+.fend .flogo{font-size:48px;margin-bottom:16px}
+.fend .fmsg{font-size:16px;color:var(--dim);margin-bottom:10px;line-height:1.8}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:480px){.intro h1{font-size:24px}.result .rcode{font-size:38px}.rrow{flex-direction:column;align-items:flex-start}.rrow .rv{align-self:flex-start}}
+</style>
+</head>
+<body>
+<div class="bg"><div class="o"></div><div class="o"></div><div class="o"></div></div>
+<div class="wrap" id="app"></div>
+<script>
+const $=s=>document.querySelector(s);
+const app=document.getElementById('app');
+
+// ===== TYPES & ILLUSTRATIONS =====
+const TYPES={
+'ESCO':{name:'附近的守望者',motto:'附近没我不行。',desc:'你是钢筋水泥森林里的稀有物种。你知道楼下便利店老板的猫叫什么名字，知道哪个公园的长椅晒太阳最舒服。你是社区的活地图，是人情味的最后防线。如果社区有群，你一定是那个热心肠的群主。'},
+'ESCH':{name:'守望者的居家版',motto:'远亲不如近邻，远门不如不出。',desc:'你很在意附近的烟火气，也愿意和邻居互动，但你的活动范围基本就是楼下那几条街。你是那种"楼下大爷大妈都认识你但你从不去远处冒险"的人。社区的定海神针，虽然很少出远门。'},
+'ESHO':{name:'社区外交官',motto:'人脉就是我的地图。',desc:'你出门不光是为了逛，更是为了"联结"。你既享受线下空间的温度，又善于把不同的人连在一起。你是那种在公园里能同时和三拨人聊天的人。'},
+'ESHD':{name:'热闹的实用主义者',motto:'关系好，办事少。',desc:'你积极出门，积极社交，但对"附近消失"这件事并不伤感——你只是觉得有人的地方更好办事。你是那种"邻居关系好是因为方便，不是因为感情深"的现实主义者。'},
+'ENCO':{name:'跨界联结者',motto:'线上线下，我全都要。',desc:'你的社交不限于物理附近，线上社群你也是活跃分子。你既在意附近的人情味，又在网络世界中如鱼得水。你是现实与虚拟之间的桥梁。'},
+'ENCH':{name:'数字游民的锚',motto:'群里社牛，出门社恐。',desc:'你虽然以家为大本营，但你的社交触角延伸到了整个互联网。你关心附近的变化，只是你的方式是在社区群里讨论而不是亲自出门。线上意见领袖，线下隐形人。'},
+'ENHO':{name:'云端流浪者',motto:'人在附近，魂在云端。',desc:'你的身体在逛街，灵魂在线上。你享受出门的感觉，但你的"附近"更多存在于手机屏幕里。你可能一边在咖啡馆坐着，一边在三个群里聊天。'},
+'ENHD':{name:'赛博游牧人',motto:'我的附近在5G信号里。',desc:'你的身体住在小区，但灵魂住在互联网。你的"附近"是微信群、是游戏服务器、是兴趣社群。现实中的邻居只是NPC，而你的精神部落远在千里之外。'},
+'ISCO':{name:'附近的观察者',motto:'我来了，我看了，我没说话。',desc:'你很了解周边的环境，也经常出门，但你和人的互动是克制的。你爱逛附近的店和公园，但不会和老板闲聊。你是"沉默的常客"。'},
+'ISCH':{name:'安静的锚点',motto:'沉默的守护，低调的熟悉。',desc:'你熟悉家附近的一切，但你的社交半径止步于"认识"。你是那种楼下便利店去了三年，老板还不知道你叫什么的人。你对附近有归属感，只是用沉默表达。'},
+'ISHO':{name:'氛围感路人',motto:'我消费的是氛围，不是社交。',desc:'你对"人"不感兴趣，但对"空间"很挑剔。你爱去家附近的咖啡馆发呆，爱去公园散步，但你戴着降噪耳机，拒绝一切不必要的社交。你爱的不是附近，而是附近提供的背景板。'},
+'ISHD':{name:'隐形居民',motto:'我在这里，但我从不在场。',desc:'你住在附近，但你在附近的雷达上完全隐形。你不出门社交，不关心社区变化，不在线上参与讨论。你是"附近"这个概念里最安静的存在。'},
+'INCO':{name:'数字守望者',motto:'键盘上的社区英雄。',desc:'你在乎附近的变化和消失，但你的关心方式是线上的。你可能在社区群里提意见、写帖子讨论附近的问题，但你很少亲自出门去和邻居面对面。'},
+'INCH':{name:'数字隐士',motto:'心系附近，身不行动。',desc:'你既不常出门，也不在线上社交——但你对"附近的消失"有一种隐秘的在意。你可能在深夜刷到社区新闻时会叹口气，但第二天继续你的封闭生活。'},
+'INHO':{name:'云端漫游者',motto:'换个地方宅而已。',desc:'你偶尔出门，但你的"附近"在屏幕那头。你可能去咖啡馆，但只是为了换个地方上网。你是那种"人在咖啡馆，心在服务器"的人。'},
+'INHD':{name:'隐形独行侠',motto:'附近？什么附近？',desc:'你的世界只有家和公司两点一线。邻居对你来说只是门牌号，快递是你和外界唯一的物质交换。你享受这种极致的边界感，毕竟，"只要我不认识邻居，邻居就伤害不了我"。'},
+};
+
+function svgIllust(code){
+  const P='#6c5ce7',G='#00b894',K='#e84393',O='#e17055',B='#74b9ff',Y='#ffeaa7',W='#dfe6e9',D='#2d3436',L='#f0f0f8';
+  const scenes={
+    'ESCO':`<rect x="20" y="55" width="55" height="50" rx="4" fill="${P}" opacity=".8"/><rect x="25" y="60" width="14" height="18" rx="2" fill="${Y}"/><rect x="45" y="60" width="14" height="18" rx="2" fill="${Y}"/><rect x="105" y="45" width="55" height="60" rx="4" fill="${G}" opacity=".8"/><rect x="110" y="50" width="14" height="18" rx="2" fill="${Y}"/><rect x="130" y="50" width="14" height="18" rx="2" fill="${Y}"/><path d="M75 80 L105 75" stroke="${B}" stroke-width="2" stroke-dasharray="4 3" opacity=".6"/><circle cx="48" cy="40" r="8" fill="${P}" opacity=".5"/><circle cx="132" cy="32" r="7" fill="${G}" opacity=".5"/><rect x="30" y="108" width="120" height="4" rx="2" fill="${W}"/><path d="M52 40 Q90 20 128 32" stroke="${B}" stroke-width="1.5" fill="none" opacity=".4"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">守望</text>`,
+    'ESCH':`<path d="M55 50 L90 25 L125 50" fill="${P}" opacity=".5"/><rect x="55" y="50" width="70" height="55" rx="4" fill="${P}" opacity=".7"/><rect x="62" y="56" width="16" height="22" rx="2" fill="${Y}"/><rect x="84" y="56" width="16" height="22" rx="2" fill="${Y}"/><rect x="70" y="86" width="18" height="19" rx="2" fill="${O}" opacity=".6"/><circle cx="90" cy="46" r="3" fill="${Y}" opacity=".8"/><circle cx="82" cy="46" r="2" fill="${Y}" opacity=".6"/><circle cx="98" cy="46" r="2" fill="${Y}" opacity=".6"/><rect x="45" y="105" width="4" height="8" rx="1" fill="${G}"/><rect x="55" y="102" width="4" height="11" rx="1" fill="${G}"/><rect x="120" y="103" width="4" height="10" rx="1" fill="${G}"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">居家</text>`,
+    'ESHO':`<circle cx="55" cy="60" r="14" fill="${P}" opacity=".7"/><circle cx="55" cy="60" r="5" fill="#fff" opacity=".5"/><circle cx="125" cy="55" r="12" fill="${G}" opacity=".7"/><circle cx="125" cy="55" r="4" fill="#fff" opacity=".5"/><circle cx="90" cy="90" r="13" fill="${K}" opacity=".7"/><circle cx="90" cy="90" r="4" fill="#fff" opacity=".5"/><line x1="69" y1="57" x2="113" y2="55" stroke="${B}" stroke-width="2" opacity=".5"/><line x1="62" y1="72" x2="80" y2="82" stroke="${B}" stroke-width="2" opacity=".5"/><line x1="118" y1="66" x2="100" y2="80" stroke="${B}" stroke-width="2" opacity=".5"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">外交</text>`,
+    'ESHD':`<circle cx="60" cy="55" r="14" fill="${P}" opacity=".7"/><circle cx="120" cy="55" r="12" fill="${G}" opacity=".7"/><rect x="50" y="88" width="24" height="22" rx="3" fill="${O}" opacity=".6"/><rect x="78" y="84" width="24" height="26" rx="3" fill="${K}" opacity=".5"/><rect x="106" y="88" width="24" height="22" rx="3" fill="${O}" opacity=".6"/><line x1="74" y1="55" x2="108" y2="55" stroke="${B}" stroke-width="2" opacity=".4"/><path d="M62 75 L78 84" stroke="${B}" stroke-width="1.5" opacity=".3" stroke-dasharray="3 3"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">实用</text>`,
+    'ENCO':`<rect x="30" y="50" width="50" height="45" rx="4" fill="${P}" opacity=".7"/><rect x="35" y="55" width="16" height="18" rx="2" fill="${Y}"/><rect x="55" y="55" width="16" height="18" rx="2" fill="${Y}"/><rect x="110" y="40" width="50" height="70" rx="6" fill="${D}" opacity=".1"/><rect x="115" y="48" width="40" height="24" rx="2" fill="${B}" opacity=".5"/><rect x="118" y="80" width="12" height="4" rx="1" fill="${W}" opacity=".5"/><rect x="134" y="80" width="12" height="4" rx="1" fill="${W}" opacity=".5"/><path d="M80 72 L110 65" stroke="${B}" stroke-width="2" stroke-dasharray="4 3" opacity=".6"/><circle cx="95" cy="68" r="4" fill="${B}" opacity=".4"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">跨界</text>`,
+    'ENCH':`<rect x="55" y="48" width="70" height="55" rx="5" fill="${P}" opacity=".5"/><rect x="62" y="54" width="56" height="28" rx="3" fill="${B}" opacity=".35"/><rect x="68" y="58" width="20" height="6" rx="1" fill="#fff" opacity=".3"/><rect x="68" y="68" width="14" height="4" rx="1" fill="#fff" opacity=".2"/><rect x="68" y="74" width="22" height="4" rx="1" fill="#fff" opacity=".2"/><circle cx="90" cy="95" r="6" fill="${B}" opacity=".5"/><circle cx="90" cy="95" r="14" fill="${B}" opacity=".12"/><circle cx="90" cy="95" r="22" fill="${B}" opacity=".06"/><path d="M78 42 L90 48 L102 42" stroke="${B}" stroke-width="1.5" fill="none" opacity=".4"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">锚点</text>`,
+    'ENHO':`<circle cx="65" cy="60" r="10" fill="${P}" opacity=".6"/><rect x="58" y="48" width="14" height="14" rx="7" fill="${P}" opacity=".4"/><path d="M45 90 L65 70 L85 90" fill="${P}" opacity=".3"/><ellipse cx="120" cy="55" rx="30" ry="18" fill="${B}" opacity=".15"/><ellipse cx="120" cy="55" rx="18" ry="10" fill="${B}" opacity=".25"/><circle cx="120" cy="55" r="4" fill="${B}" opacity=".5"/><line x1="75" y1="60" x2="100" y2="55" stroke="${B}" stroke-width="1.5" stroke-dasharray="3 3" opacity=".5"/><rect x="80" y="85" width="40" height="25" rx="3" fill="${G}" opacity=".15"/><rect x="85" y="88" width="30" height="8" rx="2" fill="${B}" opacity=".25"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">流浪</text>`,
+    'ENHD':`<path d="M110 35 L110 75" stroke="${B}" stroke-width="2" opacity=".4"/><path d="M100 45 L120 45" stroke="${B}" stroke-width="2" opacity=".4"/><circle cx="110" cy="55" r="22" fill="${B}" opacity=".06"/><circle cx="110" cy="55" r="14" fill="${B}" opacity=".12"/><circle cx="110" cy="55" r="6" fill="${B}" opacity=".3"/><path d="M40 105 Q55 85 70 105 Q85 85 100 105 Q115 85 130 105" fill="none" stroke="${O}" stroke-width="1.5" opacity=".25"/><circle cx="55" cy="60" r="6" fill="${P}" opacity=".3"/><path d="M61 60 L96 55" stroke="${B}" stroke-width="1" stroke-dasharray="3 3" opacity=".3"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">赛博</text>`,
+    'ISCO':`<rect x="30" y="55" width="35" height="40" rx="3" fill="${P}" opacity=".3"/><rect x="35" y="60" width="10" height="14" rx="1" fill="${Y}" opacity=".4"/><rect x="115" y="50" width="35" height="45" rx="3" fill="${G}" opacity=".3"/><rect x="120" y="55" width="10" height="14" rx="1" fill="${Y}" opacity=".4"/><circle cx="90" cy="45" r="10" fill="${D}" opacity=".1"/><circle cx="86" cy="43" r="2" fill="#fff" opacity=".6"/><circle cx="94" cy="43" r="2" fill="#fff" opacity=".6"/><rect x="82" y="55" width="16" height="25" rx="3" fill="${D}" opacity=".08"/><circle cx="90" cy="75" r="18" fill="transparent" stroke="${P}" stroke-width="1.5" opacity=".2" stroke-dasharray="4 3"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">观察</text>`,
+    'ISCH':`<rect x="50" y="45" width="80" height="60" rx="6" fill="${P}" opacity=".35"/><rect x="58" y="52" width="22" height="18" rx="2" fill="${Y}" opacity=".35"/><rect x="88" y="52" width="22" height="18" rx="2" fill="${Y}" opacity=".25"/><rect x="65" y="78" width="18" height="20" rx="2" fill="${O}" opacity=".25"/><line x1="65" y1="52" x2="65" y2="70" stroke="${D}" stroke-width=".8" opacity=".15"/><line x1="110" y1="52" x2="110" y2="70" stroke="${D}" stroke-width=".8" opacity=".15"/><circle cx="90" cy="35" r="5" fill="${P}" opacity=".15"/><rect x="35" y="108" width="110" height="3" rx="1" fill="${W}" opacity=".5"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">安静</text>`,
+    'ISHO':`<rect x="80" y="50" width="40" height="35" rx="4" fill="${P}" opacity=".2"/><rect x="86" y="55" width="28" height="16" rx="2" fill="${B}" opacity=".2"/><path d="M86 72 Q100 68 114 72" stroke="${P}" stroke-width="3" fill="none" opacity=".3" stroke-linecap="round"/><circle cx="100" cy="60" r="3" fill="${P}" opacity=".15"/><rect x="55" y="55" width="20" height="30" rx="4" fill="${O}" opacity=".2"/><rect x="58" y="58" width="6" height="8" rx="1" fill="${Y}" opacity=".35"/><rect x="58" y="70" width="6" height="8" rx="1" fill="${Y}" opacity=".25"/><path d="M60 50 C55 35 75 35 70 50" stroke="${K}" stroke-width="1" fill="none" opacity=".3"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">氛围</text>`,
+    'ISHD':`<rect x="60" y="45" width="60" height="55" rx="5" fill="${D}" opacity=".04"/><rect x="68" y="52" width="16" height="20" rx="2" fill="${D}" opacity=".03"/><rect x="92" y="52" width="16" height="20" rx="2" fill="${D}" opacity=".03"/><circle cx="90" cy="70" r="8" fill="transparent" stroke="${P}" stroke-width="1" opacity=".1" stroke-dasharray="3 3"/><rect x="40" y="58" width="18" height="30" rx="3" fill="${D}" opacity=".04"/><rect x="122" y="58" width="18" height="30" rx="3" fill="${D}" opacity=".04"/><line x1="58" y1="70" x2="72" y2="70" stroke="${D}" stroke-width="1" opacity=".06" stroke-dasharray="2 2"/><line x1="108" y1="70" x2="122" y2="70" stroke="${D}" stroke-width="1" opacity=".06" stroke-dasharray="2 2"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">隐形</text>`,
+    'INCO':`<rect x="70" y="45" width="50" height="40" rx="3" fill="${D}" opacity=".08"/><rect x="76" y="50" width="38" height="22" rx="2" fill="${B}" opacity=".25"/><rect x="80" y="54" width="18" height="4" rx="1" fill="#fff" opacity=".25"/><rect x="80" y="62" width="12" height="3" rx="1" fill="#fff" opacity=".15"/><rect x="80" y="68" width="22" height="3" rx="1" fill="#fff" opacity=".15"/><path d="M82 38 L90 25 L98 38" stroke="${G}" stroke-width="2" fill="none" opacity=".4"/><circle cx="90" cy="42" r="4" fill="${G}" opacity=".3"/><circle cx="90" cy="42" r="10" fill="${G}" opacity=".06"/><rect x="65" y="95" width="50" height="8" rx="2" fill="${D}" opacity=".05"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">数字守望</text>`,
+    'INCH':`<path d="M60 105 Q60 50 90 50 Q120 50 120 105" fill="${P}" opacity=".1"/><circle cx="90" cy="65" r="8" fill="${P}" opacity=".15"/><rect x="82" y="56" width="16" height="12" rx="2" fill="${B}" opacity=".2"/><circle cx="90" cy="62" r="2" fill="${B}" opacity=".3"/><rect x="70" y="80" width="40" height="16" rx="3" fill="${D}" opacity=".04"/><rect x="76" y="84" width="12" height="4" rx="1" fill="#fff" opacity=".15"/><rect x="76" y="90" width="18" height="3" rx="1" fill="#fff" opacity=".1"/><path d="M55 105 L125 105" stroke="${W}" stroke-width="1" opacity=".5"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">隐士</text>`,
+    'INHO':`<rect x="70" y="55" width="40" height="30" rx="3" fill="${D}" opacity=".06"/><rect x="76" y="60" width="28" height="16" rx="2" fill="${B}" opacity=".2"/><rect x="82" y="64" width="10" height="4" rx="1" fill="#fff" opacity=".15"/><rect x="82" y="70" width="14" height="3" rx="1" fill="#fff" opacity=".1"/><path d="M70 70 L55 80 L55 65" stroke="${P}" stroke-width="1.5" fill="none" opacity=".2"/><circle cx="50" cy="62" r="3" fill="${P}" opacity=".2"/><rect x="120" y="55" width="25" height="25" rx="3" fill="${O}" opacity=".08"/><rect x="124" y="60" width="8" height="10" rx="1" fill="${Y}" opacity=".2"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">漫游</text>`,
+    'INHD':`<rect x="35" y="50" width="30" height="30" rx="3" fill="${D}" opacity=".06"/><rect x="40" y="55" width="8" height="10" rx="1" fill="${Y}" opacity=".1"/><rect x="115" y="50" width="30" height="30" rx="3" fill="${D}" opacity=".06"/><rect x="120" y="55" width="8" height="10" rx="1" fill="${Y}" opacity=".1"/><path d="M65 65 L115 65" stroke="${D}" stroke-width="1" opacity=".08" stroke-dasharray="4 4"/><circle cx="90" cy="65" r="4" fill="${D}" opacity=".06"/><rect x="55" y="95" width="70" height="2" rx="1" fill="${W}" opacity=".4"/><rect x="55" y="102" width="70" height="2" rx="1" fill="${W}" opacity=".25"/><text x="90" y="126" text-anchor="middle" font-size="8" fill="${D}" opacity=".3">独行</text>`,
+  };
+  return `<svg viewBox="0 0 180 140" width="220" height="160" xmlns="http://www.w3.org/2000/svg">${scenes[code]||''}</svg>`;
+}
+
+// ===== QUESTIONS DATA =====
+const QS=[
+  // Stage 1 (0-1)
+  {stage:1,stagClass:'s1',stageName:'你是谁？你在哪？',type:'single',q:'此时此刻，你是不是正扎根在某个城市里？（已经住了3个月以上，而不是四处流浪）',opts:[{l:'A',t:'是，我是本地常驻NPC'},{l:'B',t:'否'}],filter:v=>v==='B'?'end':''},
+  {stage:1,stagClass:'s1',stageName:'你是谁？你在哪？',type:'single',q:'你的出厂设置（年龄）是？',opts:[{l:'A',t:'18-22岁'},{l:'B',t:'23-28岁'},{l:'C',t:'29-35岁'},{l:'D',t:'18岁以下或35岁以上'}],filter:v=>v==='D'?'end':''},
+  // Stage 2 (2-9)
+  {stage:2,stagClass:'s2',stageName:'你的"附近"成分有多高？',type:'single',q:'你目前的生存状态更接近？',opts:[{l:'A',t:'正在校园知识的海洋里溺水'},{l:'B',t:'正在出卖灵魂的职业人士（全职/兼职）'},{l:'C',t:'看似自由实则24小时待机的自由职业/创业者'},{l:'D',t:'在职进修/半工半读的"卷王之王"'},{l:'E',t:'其他：_______'}]},
+  {stage:2,stagClass:'s2',stageName:'你的"附近"成分有多高？',type:'single',q:'你的"巢穴"属于哪种类型？',opts:[{l:'A',t:'进出门都要刷脸的商品住宅'},{l:'B',t:'充满了年代感和大爷大妈的注视的单位房或老旧小区'},{l:'C',t:'孤独患者的聚集地——公寓类'},{l:'D',t:'充满烟火气与握手楼的城中村'},{l:'E',t:'集体生活的幸存者——单位/校园宿舍'}]},
+  {stage:2,stagClass:'s2',stageName:'你的"附近"成分有多高？',type:'single',q:'你在这个"巢穴"里连续苟了多久？',opts:[{l:'A',t:'刚来乍到，地图还没开：3个月-6个月'},{l:'B',t:'稍微混了个脸熟：6个月-1年'},{l:'C',t:'算是个老住户了：1年-3年'},{l:'D',t:'这地儿的狗见你都得摇尾巴：超过3年'}]},
+  {stage:2,stagClass:'s2',stageName:'你的"附近"成分有多高？',type:'multi',q:'过去1个月，你在家附近解锁过哪些成就？（多选）',opts:[{l:'A',t:'城市漫步：特意逛了逛周边的巷子，发现了新大陆'},{l:'B',t:'社交牛杂症：主动和邻居打招呼、聊天，甚至互帮互助'},{l:'C',t:'实体店守护者：特意少点外卖，去楼下小店照顾生意'},{l:'D',t:'闲聊达人：买东西时顺便和老板聊了五毛钱的天'},{l:'E',t:'社区活跃分子：参加过小区组织的线下活动'},{l:'F',t:'天使投资人：为了楼下小店能活下去，办了充值卡'},{l:'G',t:'隐形人：上面这些都没做过，我和我的家锁死了'}]},
+  {stage:2,stagClass:'s2',stageName:'你的"附近"成分有多高？',type:'single',q:'生命值告急，你如何维持HP？',opts:[{l:'A',t:'外卖/网购之神：能不出门就不出门，全靠网线吊着一口气'},{l:'B',t:'应急才出门：优先网购，除非家里揭不开锅了'},{l:'C',t:'随缘佛系选手：线上线下皆可，主打一个谁快选谁'},{l:'D',t:'附近拥护者：主打近水楼台，下楼即达'}]},
+  {stage:2,stagClass:'s2',stageName:'你的"附近"成分有多高？',type:'multi',q:'遇到以下哪种突发危机，你会第一时间向邻居或物业摇人？（多选）',opts:[{l:'A',t:'家里漏水断电，急需维修工'},{l:'B',t:'临时出门，需要人帮忙收快递/看猫'},{l:'C',t:'人身安全受威胁，急需壮士相助'},{l:'D',t:'突然生病，需要人送医'},{l:'E',t:'绝不摇人：我社恐，我宁愿自己扛着或者打120'}]},
+  {stage:2,stagClass:'s2',stageName:'你的"附近"成分有多高？',type:'single',q:'你对家附近的公园、活动室等"公共副本"的探索进度是？',opts:[{l:'A',t:'完全不知道：那是哪里？能吃吗？'},{l:'B',t:'略知一二：知道有一两个，但没进去过'},{l:'C',t:'基本掌握：大概知道在哪，偶尔去溜达'},{l:'D',t:'活地图：门儿清，连哪里的长椅最舒服都知道'}]},
+  {stage:2,stagClass:'s2',stageName:'你的"附近"成分有多高？',type:'single',q:'过去一年，有没有常去的老店突然"去世"（关门），你却过了很久才发现？',opts:[{l:'A',t:'经常：我的心已经麻木了'},{l:'B',t:'偶尔：有过一两次，还挺伤感'},{l:'C',t:'从未：我常去的店都坚挺得很'},{l:'D',t:'没注意：我根本不关注它们开不开门'}]},
+  // Stage 3 (10-17)
+  {stage:3,stagClass:'s3',stageName:'公共空间里的你是哪种生物？',type:'single',q:'你平均每周去公共休闲空间（图书馆、咖啡馆、公园等）"放风"的频率是？',opts:[{l:'A',t:'把那儿当家了：几乎每天'},{l:'B',t:'常客：每周3-5次'},{l:'C',t:'偶尔放风：每周1-2次'},{l:'D',t:'稀客：每月1次甚至更少'},{l:'E',t:'几乎不去（我是宅神）'}]},
+  {stage:3,stagClass:'s3',stageName:'公共空间里的你是哪种生物？',type:'multi',q:'你经常光顾的据点的功能是？（多选）',opts:[{l:'A',t:'文化熏陶'},{l:'B',t:'民以食为天'},{l:'C',t:'燃烧卡路里'},{l:'D',t:'去公园之类的地方吸氧/发呆'},{l:'E',t:'寻找乐子（剧本杀/Livehouse/创意集市）'},{l:'F',t:'压马路：城市漫步/街头空间'},{l:'G',t:'其他：________'}]},
+  {stage:3,stagClass:'s3',stageName:'公共空间里的你是哪种生物？',type:'single',q:'【防沉迷测试】为了保证你不是机器人乱点，请直接选择："C. 偶尔"',opts:[{l:'A',t:'经常'},{l:'B',t:'总是'},{l:'C',t:'偶尔'},{l:'D',t:'从不'}]},
+  {stage:3,stagClass:'s3',stageName:'公共空间里的你是哪种生物？',type:'multi',q:'你去这些地方的真实动机是？（多选）',opts:[{l:'A',t:'寻找隔绝的乌龟壳：主打自闭/躲清静'},{l:'B',t:'聚会/约会工具人：主打陪伴'},{l:'C',t:'想去偶遇/勾搭新朋友'},{l:'D',t:'不得不去办事/运动'},{l:'E',t:'假装自己在拍电影：寻找氛围/灵感'},{l:'F',t:'逃离"待办"的追捕：主打摸鱼/精神出逃'}]},
+  {stage:3,stagClass:'s3',stageName:'公共空间里的你是哪种生物？',type:'multi',q:'选择据点时，你最看重什么？（多选）',opts:[{l:'A',t:'距离：太远了我会死'},{l:'B',t:'价格：穷是我的原罪'},{l:'C',t:'私密性：别看我，求求了'},{l:'D',t:'颜值：好看才能出片'},{l:'E',t:'社交属性：容易遇到同好'},{l:'F',t:'安全感：别让我遇到怪人'}]},
+  {stage:3,stagClass:'s3',stageName:'公共空间里的你是哪种生物？',type:'single',q:'在公共空间，你通常处于什么模式？',opts:[{l:'A',t:'结界模式：戴耳机，生人勿近'},{l:'B',t:'待机模式：不介意环境音，偶尔眼神接触'},{l:'C',t:'开放模式：来者不拒，欢迎搭讪'},{l:'D',t:'连体婴模式：全程只跟朋友玩'}]},
+  {stage:3,stagClass:'s3',stageName:'公共空间里的你是哪种生物？',type:'single',q:'评价一下当需要和陌生人进行"五毛钱"的深层互动（比如问个路、随口聊两句）时的难度系数：',opts:[{l:'A',t:'非常困难：我会原地去世'},{l:'B',t:'比较困难：脚趾扣出三室一厅'},{l:'C',t:'一般：看心情'},{l:'D',t:'比较容易：社牛预备役'},{l:'E',t:'非常容易：我是社交恐怖分子'}]},
+  {stage:3,stagClass:'s3',stageName:'公共空间里的你是哪种生物？',type:'single',q:'评价一下你和"熟人"解锁"深度话题"（谈心/聊三观）的难度系数：',opts:[{l:'A',t:'非常困难：即使是朋友也无法走心'},{l:'B',t:'比较困难：还是聊聊八卦吧'},{l:'C',t:'一般：可谈可不谈，没太大感受'},{l:'D',t:'比较容易：可以当彼此的倾听者'},{l:'E',t:'非常容易：不跟熟人谈心还跟谁谈心'}]},
+  // Stage 4 (18-25)
+  {stage:4,stagClass:'s4',stageName:'你对"附近的消失"怎么看？',type:'single',q:'你听过"家附近慢慢变陌生"这种现象，也就是大家常说的"附近的消失"吗？',opts:[{l:'A',t:'非常了解：学术概念不在话下'},{l:'B',t:'听说过：大概知道啥意思'},{l:'C',t:'不了解：但我能猜'},{l:'D',t:'完全没听过：是我孤陋寡闻了'}]},
+  {stage:4,stagClass:'s4',stageName:'你对"附近的消失"怎么看？',type:'single',q:'你觉得你住的地方，"附近"正在消失吗？',opts:[{l:'A',t:'是的，加速消失，大家都像陌生人'},{l:'B',t:'是的，正在缓慢消失'},{l:'C',t:'没有变化，一直这样'},{l:'D',t:'不是，我身边的"附近"活得好好的'}],filter:v=>v==='D'?'result':''},
+  {stage:4,stagClass:'s4',stageName:'你对"附近的消失"怎么看？',type:'single',q:'对于"家附近越来越陌生"这件事，你的态度是？',opts:[{l:'A',t:'生活失去了人情味，有点难过'},{l:'B',t:'担心万一出事了没人帮，有点慌'},{l:'C',t:'互不打扰挺好的，轻松'},{l:'D',t:'我就喜欢这种孤独的贵族感'}]},
+  {stage:4,stagClass:'s4',stageName:'你对"附近的消失"怎么看？',type:'multi',q:'你觉得"家附近越来越陌生"的罪魁祸首是？（多选）',opts:[{l:'A',t:'门禁太严，想串门都难'},{l:'B',t:'累成狗了，只想躺平'},{l:'C',t:'网上冲浪更有趣，邻居算老几'},{l:'D',t:'互不打扰是最高礼仪'},{l:'E',t:'连锁店没有灵魂，还是喜欢有烟火气的老店、小店'},{l:'F',t:'手机能解决一切，出门干嘛'},{l:'G',t:'其他：__________'}]},
+  {stage:4,stagClass:'s4',stageName:'你对"附近的消失"怎么看？',type:'single',q:'相比于邻居，你是否更愿意和住在城市另一端但兴趣相投的人玩？',opts:[{l:'A',t:'兴趣第一，距离算个屁'},{l:'B',t:'不，远亲不如近邻，近一点方便蹭饭'},{l:'C',t:'都不重要，我享受孤独'},{l:'D',t:'都重要，我全都要'}]},
+  {stage:4,stagClass:'s4',stageName:'你对"附近的消失"怎么看？',type:'rating',q:'给表格中的说法打打分吧',hint:'1分=完全不贴合  2分=不太贴合  3分=一般  4分=比较贴合  5分=完全贴合',ratings:['我在意能不能和家附近的邻居处好关系','我在意家附近我常去的小店能不能一直开下去','我在意家附近有没有足够的、舒服的公园和活动的地方','我在意自己对住的小区和周边环境有没有归属感','我觉得多熟悉熟悉家附近的人和环境，能让我的生活质量变高','比起和邻居处关系，我更愿意在自己喜欢的休闲场所里认识新朋友']},
+  {stage:4,stagClass:'s4',stageName:'你对"附近的消失"怎么看？',type:'single',q:'未来你想不想多花点心思，和家附近的人/环境建立连接？',opts:[{l:'A',t:'非常想，已经迫不及待了'},{l:'B',t:'比较想，愿意试一试'},{l:'C',t:'不确定，看心情'},{l:'D',t:'不太想，没那闲工夫'},{l:'E',t:'完全不想，别来沾边'}]},
+  {stage:4,stagClass:'s4',stageName:'你对"附近的消失"怎么看？',type:'open',q:'【开放题】关于"家附近变陌生"，你有没有哪个瞬间感触很深？或者你理想中有温度的社区是啥样的？（选填）',placeholder:'写下你的想法...'},
+];
+
+// ===== SCORING =====
+const SC={
+  q3:{A:{},B:{O:1},C:{H:1},D:{O:1},E:{}},
+  q4:{A:{I:1},B:{E:1,S:1,C:1},C:{I:1,H:1,D:1},D:{E:1,S:1,C:1},E:{H:1}},
+  q5:{A:{D:1},B:{},C:{S:1,C:1},D:{S:1,C:1}},
+  q6:{A:{S:1,O:1},B:{E:2},C:{S:1,C:1},D:{E:1},E:{E:2,O:1,C:1},F:{E:1,S:1,C:1},G:{I:2,H:2,D:1}},
+  q7:{A:{N:2,H:2},B:{N:1,H:1},C:{},D:{S:2,O:1}},
+  q8:{A:{E:1},B:{E:1},C:{E:1,C:1},D:{E:1,C:1},E:{I:2,D:1}},
+  q9:{A:{H:2},B:{H:1},C:{S:1,O:1},D:{S:1,O:2}},
+  q10:{A:{S:1,C:1},B:{S:1,C:1},C:{S:1},D:{N:1,H:1,D:1}},
+  q11:{A:{O:2},B:{O:1},C:{O:1},D:{H:1},E:{H:2}},
+  q12:{A:{S:1,O:1},B:{S:1,O:1},C:{O:1},D:{I:1,S:1,O:1},E:{E:1,O:1},F:{S:1,O:1},G:{}},
+  q13:{},
+  q14:{A:{I:1,H:1},B:{E:1,O:1},C:{E:1,O:1},D:{O:1},E:{I:1,S:1,O:1},F:{I:1,H:1}},
+  q15:{A:{O:1},B:{},C:{I:1,D:1},D:{O:1},E:{E:1},F:{I:1}},
+  q16:{A:{I:2,D:1},B:{},C:{E:2},D:{}},
+  q17:{A:{I:2},B:{I:1},C:{},D:{E:1},E:{E:2}},
+  q18:{A:{I:2},B:{I:1},C:{},D:{E:1},E:{E:2}},
+  q19:{},
+  q20:{A:{C:2},B:{C:1},C:{},D:{D:1}},
+  q21:{A:{C:2},B:{C:1},C:{D:1},D:{D:2}},
+  q22:{A:{C:1},B:{H:1},C:{N:1},D:{I:1,D:1},E:{S:1,C:1},F:{N:1,H:1},G:{}},
+  q23:{A:{N:2},B:{S:2},C:{I:1,D:1},D:{}},
+  q24:{1:{E:1,C:1},2:{S:1,C:1},3:{S:1,O:1,C:1},4:{C:2},5:{E:1,C:1},6:{N:1}},
+  q25:{A:{C:2},B:{C:1},C:{},D:{D:1},E:{D:2}},
+};
+
+// ===== STATE =====
+let qi=0, ans={}, r24={}, scores={E:0,I:0,S:0,N:0,O:0,H:0,C:0,D:0}, _tapCount=0, _tapTimer=null;
+
+// ===== INTRO =====
+function showIntro(){
+  app.innerHTML=`
+  <div class="intro">
+    <div class="logo" onclick="_secretTap()" style="cursor:default">🏙️</div>
+    <h1>你的"附近"人格查询器</h1>
+    <div class="sub">NCT — Nearby Connection Type</div>
+    <p class="desc">MBTI测不出你在城市里是什么"生物"。<br>NCT测试来了——4个维度，16种人格，<br>测出你在钢筋水泥森林里的真实生态位。<br><br>本测试纯属娱乐，别拿去相亲或面试！</p>
+    <div class="dims">
+      <div class="dcard"><div class="dl">互动方式</div><div class="dv"><span style="color:var(--accent2)">E 连结</span><span class="vs">vs</span><span style="color:var(--green)">I 孤岛</span></div></div>
+      <div class="dcard"><div class="dl">附近在哪</div><div class="dv"><span style="color:var(--accent2)">S 实境</span><span class="vs">vs</span><span style="color:var(--green)">N 云端</span></div></div>
+      <div class="dcard"><div class="dl">活动半径</div><div class="dv"><span style="color:var(--accent2)">O 出走</span><span class="vs">vs</span><span style="color:var(--green)">H 据守</span></div></div>
+      <div class="dcard"><div class="dl">消失态度</div><div class="dv"><span style="color:var(--accent2)">C 眷恋</span><span class="vs">vs</span><span style="color:var(--green)">D 疏离</span></div></div>
+    </div>
+    <button class="start-btn" onclick="goQ(0)">开始测试</button>
+  </div>`;
+}
+
+// ===== QUESTION PAGE =====
+function goQ(i){
+  qi=i;
+  if(i>=QS.length){calcResult();return;}
+  const q=QS[i];
+  const total=QS.length;
+  const pct=(i/total*100).toFixed(0);
+
+  let body='';
+  if(q.type==='single'){
+    body=`<div class="opts">${q.opts.map(o=>`<button class="obtn${ans['q'+i]===o.l?' sel':''}" onclick="pickS(${i},'${o.l}',this)"><span class="lt">${o.l}</span><span>${o.t}</span></button>`).join('')}</div>`;
+  } else if(q.type==='multi'){
+    const sel=ans['q'+i]||[];
+    body=`<div class="opts">${q.opts.map(o=>`<button class="obtn ck${sel.includes(o.l)?' on':''}" onclick="pickM(${i},'${o.l}',this)"><span class="lt">✓</span><span>${o.t}</span></button>`).join('')}</div>`;
+  } else if(q.type==='rating'){
+    body=`<div>${q.hint?`<div class="q-hint">${q.hint}</div>`:''}${q.ratings.map((r,ri)=>`<div class="rrow"><span class="rl">${ri+1}. ${r}</span><div class="rv">${[1,2,3,4,5].map(v=>`<button class="rbtn${r24[ri+1]===v?' on':''}" onclick="pickR(${ri+1},${v},this)">${v}</button>`).join('')}</div></div>`).join('')}</div>`;
+  } else if(q.type==='open'){
+    body=`<textarea class="tinput" id="openInput" placeholder="${q.placeholder||''}" oninput="ans['q'+${i}]=this.value">${ans['q'+i]||''}</textarea>`;
+  }
+
+  const canNext=q.type==='open'||q.type==='multi'||q.type==='rating'||ans['q'+i];
+
+  app.innerHTML=`
+  <div class="top-bar">
+    <div class="top-row"><span>第${q.stage}阶段 · ${q.stageName}</span><span>${i+1} / ${total}</span></div>
+    <div class="prog"><div class="bar" style="width:${pct}%"></div></div>
+  </div>
+  <div class="q-area">
+    <span class="stag ${q.stagClass}">第${q.stage}阶段</span>
+    <div class="q-text"><span class="q-num">${i+1}.</span>${q.q}</div>
+    ${body}
+  </div>
+  <div class="nav">
+    <button class="nbtn prev" onclick="goQ(${i-1})" ${i===0?'style="visibility:hidden"':''}>← 上一题</button>
+    ${i===total-1?`<button class="nbtn submit" onclick="calcResult()">查看结果 →</button>`:`<button class="nbtn next" onclick="tryNext(${i})" ${!canNext?'disabled':''}>下一题 →</button>`}
+  </div>`;
+}
+
+function pickS(i,v,btn){
+  ans['q'+i]=v;
+  btn.parentElement.querySelectorAll('.obtn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  const q=QS[i];
+  if(q.filter){
+    const f=q.filter(v);
+    if(f==='end'){showFilterEnd();return;}
+    if(f==='result'){setTimeout(()=>calcResult(),350);return;}
+  }
+  setTimeout(()=>goQ(i+1),350);
+}
+
+function pickM(i,v,btn){
+  if(!ans['q'+i])ans['q'+i]=[];
+  const idx=ans['q'+i].indexOf(v);
+  if(idx>=0)ans['q'+i].splice(idx,1); else ans['q'+i].push(v);
+  btn.classList.toggle('on');
+}
+
+function pickR(rid,v,btn){
+  r24[rid]=v;
+  btn.parentElement.querySelectorAll('.rbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function tryNext(i){
+  const q=QS[i];
+  if(q.type==='single'&&!ans['q'+i])return;
+  goQ(i+1);
+}
+
+function showFilterEnd(){
+  app.innerHTML=`
+  <div class="fend show">
+    <div class="flogo">👋</div>
+    <div class="fmsg">感谢参与！本测试面向在城市定居3个月以上的18-35岁群体。</div>
+    <button class="nbtn next" style="margin-top:20px" onclick="resetAll()">重新开始</button>
+  </div>`;
+}
+
+// ===== CALC =====
+function calcResult(){
+  scores={E:0,I:0,S:0,N:0,O:0,H:0,C:0,D:0};
+  const add=o=>{if(!o)return;for(const k in o)if(scores[k]!==undefined)scores[k]+=o[k]};
+  for(let i=0;i<QS.length;i++){
+    const q=QS[i],key='q'+i;
+    if(q.type==='single'){
+      if(ans[key]&&SC[key]&&SC[key][ans[key]])add(SC[key][ans[key]]);
+    } else if(q.type==='multi'){
+      if(ans[key]&&SC[key])ans[key].forEach(v=>{if(SC[key][v])add(SC[key][v])});
+    } else if(q.type==='rating'){
+      if(SC.q24)for(const rid in r24){const b=SC.q24[rid];if(b){const f=r24[rid]/3;for(const k in b)if(scores[k]!==undefined)scores[k]+=Math.round(b[k]*f*10)/10}}
+    }
+  }
+  const d1=scores.E>=scores.I?'E':'I',d2=scores.S>=scores.N?'S':'N',d3=scores.O>=scores.H?'O':'H',d4=scores.C>=scores.D?'C':'D';
+  const code=d1+d2+d3+d4;
+  showResult(code);
+}
+
+// ===== RESULT =====
+function showResult(code){
+  // Save response data
+  saveResponse(code);
+  const t=TYPES[code]||TYPES['INHD'];
+  const dims=[
+    {label:'互动方式',l:'E 连结',r:'I 孤岛',lv:scores.E,rv:scores.I,w:code[0]==='E',c:'#6c5ce7'},
+    {label:'附近在哪',l:'S 实境',r:'N 云端',lv:scores.S,rv:scores.N,w:code[1]==='S',c:'#00b894'},
+    {label:'活动半径',l:'O 出走',r:'H 据守',lv:scores.O,rv:scores.H,w:code[2]==='O',c:'#e84393'},
+    {label:'消失态度',l:'C 眷恋',r:'D 疻离',lv:scores.C,rv:scores.D,w:code[3]==='C',c:'#e17055'},
+  ];
+  app.innerHTML=`
+  <div class="result show">
+    <div class="illust">${svgIllust(code)}</div>
+    <div class="rcode">${code}</div>
+    <div class="rname">${t.name}</div>
+    <div class="rmotto">${t.motto}</div>
+    <div class="rdesc">${t.desc}</div>
+    <div class="rdims">${dims.map(d=>`<div class="rdim"><div class="rl">${d.label}</div><div class="rv" style="color:${d.c}">${d.w?d.l:d.r}</div><div class="rs">${d.lv} : ${d.rv}</div></div>`).join('')}</div>
+    <button class="rbtn2" onclick="resetAll()">再测一次</button>
+  </div>`;
+}
+
+function resetAll(){
+  scores={E:0,I:0,S:0,N:0,O:0,H:0,C:0,D:0};ans={};r24={};showIntro();
+}
+
+// ===== SECRET ADMIN ACCESS =====
+function _secretTap(){
+  _tapCount++;
+  clearTimeout(_tapTimer);
+  _tapTimer=setTimeout(()=>{_tapCount=0;},1500);
+  if(_tapCount>=5){_tapCount=0;showAdmin();}
+}
+
+// ===== DATA STORAGE =====
+const STORAGE_KEY='nct_responses';
+function getResponses(){
+  try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[];}catch(e){return[];}
+}
+function saveResponse(code){
+  const responses=getResponses();
+  const record={
+    id:Date.now(),
+    time:new Date().toLocaleString('zh-CN'),
+    code:code,
+    scores:{...scores},
+  };
+  // Save each question answer
+  for(let i=0;i<QS.length;i++){
+    const key='q'+i;
+    if(ans[key]!==undefined) record[key]=Array.isArray(ans[key])?ans[key].join(','):(ans[key]||'');
+    else record[key]='';
+  }
+  // Save rating details
+  record.ratings={...r24};
+  // Save open answer
+  const openEl=document.getElementById('openInput');
+  if(openEl) record.q25_open=openEl.value;
+  responses.push(record);
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(responses));}catch(e){}
+}
+
+// ===== CSV EXPORT =====
+function exportCSV(){
+  const data=getResponses();
+  if(!data.length){alert('暂无数据');return;}
+  // Build header
+  const headers=['序号','时间','人格类型','E','I','S','N','O','H','C','D'];
+  for(let i=0;i<QS.length;i++) headers.push('Q'+(i+1));
+  headers.push('评分1','评分2','评分3','评分4','评分5','评分6');
+  // Build rows
+  const rows=data.map((r,idx)=>{
+    const row=[idx+1,r.time,r.code,
+      r.scores.E,r.scores.I,r.scores.S,r.scores.N,r.scores.O,r.scores.H,r.scores.C,r.scores.D];
+    for(let i=0;i<QS.length;i++) row.push(r['q'+i]||'');
+    const rt=r.ratings||{};
+    row.push(rt[1]||'',rt[2]||'',rt[3]||'',rt[4]||'',rt[5]||'',rt[6]||'');
+    return row;
+  });
+  // Generate CSV with BOM for Excel
+  let csv='\uFEFF';
+  csv+=headers.map(h=>'"'+h+'"').join(',')+'\n';
+  rows.forEach(row=>{csv+=row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')+'\n';});
+  // Download
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='NCT测试数据_'+new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ===== JSON EXPORT =====
+function exportJSON(){
+  const data=getResponses();
+  if(!data.length){alert('暂无数据');return;}
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='NCT测试数据_'+new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ===== ADMIN DASHBOARD =====
+function showAdmin(){
+  const data=getResponses();
+  const total=data.length;
+  // Type distribution
+  const typeCounts={};
+  Object.keys(TYPES).forEach(k=>typeCounts[k]=0);
+  data.forEach(r=>{if(typeCounts[r.code]!==undefined)typeCounts[r.code]++;});
+  // Dimension averages
+  const avg={E:0,I:0,S:0,N:0,O:0,H:0,C:0,D:0};
+  if(total){data.forEach(r=>{for(const k in avg)avg[k]+=r.scores[k]||0;});for(const k in avg)avg[k]=(avg[k]/total).toFixed(1);}
+  // Type distribution bar chart
+  const maxCount=Math.max(1,...Object.values(typeCounts));
+  const typeBarW=16,gap=6,chartW=Object.keys(typeCounts).length*(typeBarW+gap);
+  const chartH=120;
+  const typeBars=Object.entries(typeCounts).map(([k,v],i)=>{
+    const x=i*(typeBarW+gap)+8;
+    const bh=Math.max(1,v/maxCount*(chartH-20));
+    const y=chartH-bh-2;
+    const fill=v>0?'#6c5ce7':'rgba(0,0,0,.06)';
+    return `<rect x="${x}" y="${y}" width="${typeBarW}" height="${bh}" rx="2" fill="${fill}" opacity="${v?0.7:0.3}"/><text x="${x+typeBarW/2}" y="${y-3}" text-anchor="middle" font-size="7" fill="${v?'#2d3436':'#b2bec3'}">${v||''}</text><text x="${x+typeBarW/2}" y="${chartH+10}" text-anchor="middle" font-size="6" fill="#636e72">${k}</text>`;
+  }).join('');
+  // Dimension comparison
+  const dimPairs=[{l:'E',r:'I',lc:'#6c5ce7',rc:'#a29bfe'},{l:'S',r:'N',lc:'#00b894',rc:'#55efc4'},{l:'O',r:'H',lc:'#e84393',rc:'#fd79a8'},{l:'C',r:'D',lc:'#e17055',rc:'#fab1a0'}];
+  const dimChartW=280,dimChartH=100;
+  const dimBars=dimPairs.map((p,i)=>{
+    const y=i*22+8;
+    const lw=Math.max(2,(parseFloat(avg[p.l])/(parseFloat(avg[p.l])+parseFloat(avg[p.r])+0.01))*(dimChartW-80));
+    const rw=Math.max(2,(parseFloat(avg[p.r])/(parseFloat(avg[p.l])+parseFloat(avg[p.r])+0.01))*(dimChartW-80));
+    return `<text x="0" y="${y+10}" font-size="9" fill="#2d3436" font-weight="700">${p.l}</text><rect x="20" y="${y}" width="${lw}" height="12" rx="3" fill="${p.lc}" opacity=".7"/><text x="${22+lw}" y="${y+10}" font-size="7" fill="#636e72">${avg[p.l]}</text><text x="${dimChartW/2+10}" y="${y+10}" font-size="9" fill="#2d3436" font-weight="700">${p.r}</text><rect x="${dimChartW/2+30}" y="${y}" width="${rw}" height="12" rx="3" fill="${p.rc}" opacity=".7"/><text x="${dimChartW/2+32+rw}" y="${y+10}" font-size="7" fill="#636e72">${avg[p.r]}</text>`;
+  }).join('');
+
+  // ===== Per-question option distribution =====
+  const barColors=['#6c5ce7','#00b894','#e84393','#e17055','#a29bfe','#55efc4','#fd79a8','#fab1a0'];
+  let qStatsHTML='';
+  QS.forEach((q,qi)=>{
+    const key='q'+qi;
+    // Count respondents for this question
+    const respondents=data.filter(r=>r[key]!==undefined&&r[key]!=='');
+    const rTotal=respondents.length;
+    let body='';
+    const typeLabel=q.type==='single'?'单选':q.type==='multi'?'多选':q.type==='rating'?'量表':q.type==='open'?'开放':'--';
+    body+=`<div class="qs-head"><span class="qs-num">Q${qi+1}</span><span class="qs-type">${typeLabel}</span></div>`;
+    body+=`<div class="qs-text">${q.q}</div>`;
+    if(q.type==='single'&&q.opts){
+      q.opts.forEach((o,oi)=>{
+        const cnt=respondents.filter(r=>r[key]===o.l).length;
+        const pct=rTotal?Math.round(cnt/rTotal*100):0;
+        const col=barColors[oi%barColors.length];
+        body+=`<div class="qs-opt">${o.l}. ${o.t}</div>`;
+        body+=`<div class="qs-row"><span class="qs-lbl">${o.l}</span><div class="qs-bar-wrap"><div class="qs-bar" style="width:${pct}%;background:${col};opacity:.7"></div><span class="qs-bar-text">${cnt}人 (${pct}%)</span></div></div>`;
+      });
+    } else if(q.type==='multi'&&q.opts){
+      q.opts.forEach((o,oi)=>{
+        const cnt=respondents.filter(r=>{const a=r[key];return a&&a.split(',').includes(o.l)}).length;
+        const pct=rTotal?Math.round(cnt/rTotal*100):0;
+        const col=barColors[oi%barColors.length];
+        body+=`<div class="qs-opt">${o.l}. ${o.t}</div>`;
+        body+=`<div class="qs-row"><span class="qs-lbl">${o.l}</span><div class="qs-bar-wrap"><div class="qs-bar" style="width:${pct}%;background:${col};opacity:.7"></div><span class="qs-bar-text">${cnt}人 (${pct}%)</span></div></div>`;
+      });
+    } else if(q.type==='rating'&&q.ratings){
+      q.ratings.forEach((r,ri)=>{
+        const rid=ri+1;
+        const vals=respondents.filter(r=>r.ratings&&r.ratings[rid]).map(r=>r.ratings[rid]);
+        const avg2=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1):'--';
+        body+=`<div class="qs-opt">${rid}. ${r}</div>`;
+        body+=`<div class="qs-row"><span class="qs-lbl">${rid}</span><div class="qs-bar-wrap"><div class="qs-bar" style="width:${avg2!=='--'?avg2/5*100:0}%;background:${barColors[ri%barColors.length]};opacity:.7"></div><span class="qs-bar-text">均分 ${avg2} (${vals.length}人)</span></div></div>`;
+      });
+    } else if(q.type==='open'){
+      const cnt=respondents.filter(r=>r[key]).length;
+      body+=`<div class="qs-avg">收到 ${cnt} 条回答（详见CSV导出）</div>`;
+    }
+    qStatsHTML+=`<div class="q-stat">${body}</div>`;
+  });
+
+  // Data table
+  const tableRows=data.slice(-50).reverse().map((r,idx)=>{
+    const i=data.length-idx;
+    return `<tr><td>${i}</td><td>${r.time}</td><td><b>${r.code}</b></td><td>${r.scores.E}</td><td>${r.scores.I}</td><td>${r.scores.S}</td><td>${r.scores.N}</td><td>${r.scores.O}</td><td>${r.scores.H}</td><td>${r.scores.C}</td><td>${r.scores.D}</td>${QS.map((_,qi)=>`<td>${r['q'+qi]||''}</td>`).join('')}</tr>`;
+  }).join('');
+
+  app.innerHTML=`
+  <div class="admin">
+    <button class="admin-btn" style="position:static;margin-bottom:16px" onclick="showIntro()">← 返回首页</button>
+    <h2>📊 数据管理面板</h2>
+    <p class="sub">所有数据保存在浏览器本地，清除浏览器数据会丢失。请定期导出备份。</p>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="sl">总参与人数</div><div class="sv" style="color:#6c5ce7">${total}</div></div>
+      <div class="stat-card"><div class="sl">最多的人格</div><div class="sv" style="color:#00b894">${Object.entries(typeCounts).sort((a,b)=>b[1]-a[1])[0][0]}</div></div>
+      <div class="stat-card"><div class="sl">E连结占比</div><div class="sv" style="color:#e84393">${total?Math.round(data.filter(r=>r.code[0]==='E').length/total*100):0}%</div></div>
+      <div class="stat-card"><div class="sl">C眷恋占比</div><div class="sv" style="color:#e17055">${total?Math.round(data.filter(r=>r.code[3]==='C').length/total*100):0}%</div></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-box"><h3>16种人格分布</h3><svg viewBox="0 0 ${chartW+20} ${chartH+18}" xmlns="http://www.w3.org/2000/svg">${typeBars}</svg></div>
+      <div class="chart-box"><h3>四维度平均分对比</h3><svg viewBox="0 0 ${dimChartW+10} ${dimChartH}" xmlns="http://www.w3.org/2000/svg">${dimBars}</svg></div>
+    </div>
+    <div class="exp-row">
+      <button class="exp-btn" onclick="exportCSV()">📥 导出 CSV（Excel/SPSS）</button>
+      <button class="exp-btn" onclick="exportJSON()">📥 导出 JSON</button>
+      <button class="exp-btn" onclick="if(confirm('确定清空所有数据？此操作不可恢复！')){localStorage.removeItem('nct_responses');showAdmin();}">🗑️ 清空数据</button>
+    </div>
+    <div class="section-title">逐题选项分布</div>
+    ${qStatsHTML}
+    <div class="section-title">原始数据表（最近50条）</div>
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>#</th><th>时间</th><th>类型</th><th>E</th><th>I</th><th>S</th><th>N</th><th>O</th><th>H</th><th>C</th><th>D</th>${QS.map((_,i)=>'<th>Q'+(i+1)+'</th>').join('')}</tr>
+        ${tableRows}
+      </table>
+    </div>
+  </div>`;
+}
+
+showIntro();
+
+</script>
+</body>
+</html>
