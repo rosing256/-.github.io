@@ -667,14 +667,14 @@ showIntro();
 
 <script>
 
-const db = supabase.createClient(
+const client = supabase.createClient(
   'https://kwxhzcrzhswgrxfuyjpv.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3eGh6Y3J6aHN3Z3J4ZnV5anB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NDA0MzksImV4cCI6MjA5NTUxNjQzOX0.XZ3yjbLOLae5oknq3WBNBPfVgmZbDOS6125nP7mjLOo'
 )
 
-async function testdb(){
+async function saveTest(){
 
-  const { data, error } = await db
+  const { data, error } = await client
     .from('test_sessions')
     .insert([
       {
@@ -683,12 +683,14 @@ async function testdb(){
     ])
     .select()
 
-  console.log(data)
-  console.log(error)
+  console.log('data:', data)
+  console.log('error:', error)
+
 }
 
-testdb()
+saveTest()
 
 </script>
+
 </body>
 </html>
