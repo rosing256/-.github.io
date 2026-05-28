@@ -585,7 +585,7 @@ async function saveResponse(code){
     );
 
     const { error } = await supabaseClient
-      .from('nct.test_results')
+      .from('test_results')
       .insert([{
         result_code: code,
         scores: scores,
