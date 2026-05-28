@@ -674,7 +674,7 @@ const db = supabase.createClient(
 
 async function testDB(){
 
-  const { data, error } = await supabaseClient
+  const { data, error } = await db
     .from('test_sessions')
     .insert([
       {
