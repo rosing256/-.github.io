@@ -672,7 +672,7 @@ const db = supabase.createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3eGh6Y3J6aHN3Z3J4ZnV5anB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NDA0MzksImV4cCI6MjA5NTUxNjQzOX0.XZ3yjbLOLae5oknq3WBNBPfVgmZbDOS6125nP7mjLOo'
 )
 
-async function testDB(){
+async function testdb(){
 
   const { data, error } = await db
     .from('test_sessions')
@@ -687,7 +687,7 @@ async function testDB(){
   console.log(error)
 }
 
-testDB()
+testdb()
 
 </script>
 </body>
