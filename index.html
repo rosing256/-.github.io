@@ -224,7 +224,18 @@ box-shadow:
 <body>
 <div class="bg"><div class="o"></div><div class="o"></div><div class="o"></div></div>
 <div class="wrap" id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+
+const supabaseUrl='https://kwxhzcrzhswgrxfuyjpv.supabase.co';
+const supabaseKey='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3eGh6Y3J6aHN3Z3J4ZnV5anB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NDA0MzksImV4cCI6MjA5NTUxNjQzOX0.XZ3yjbLOLae5oknq3WBNBPfVgmZbDOS6125nP7mjLOo';
+
+const supabaseClient=supabase.createClient(
+  supabaseUrl,
+  supabaseKey
+);
+
 const $=s=>document.querySelector(s);
 const app=document.getElementById('app');
 
@@ -292,23 +303,60 @@ const QS=[
 
 // ===== SCORING (7 types: Guardian/Builder/Passerby/Hermit/Nomad/Detached/Drifter) =====
 const SC={
-  q6:{A:{Guardian:1},B:{Builder:2,Guardian:1},C:{Guardian:1},D:{Guardian:1,Builder:1},E:{Builder:2},F:{Guardian:1},G:{Hermit:2,Drifter:1}},
+  q6:{ A:{Guardian:1,Passerby:1},
+  B:{Builder:3},
+  C:{Guardian:1,Builder:1},
+  D:{Guardian:1},
+  E:{Builder:4},
+  F:{Builder:3,Guardian:1},
+  G:{Hermit:2,Drifter:2}},
   q7:{A:{Hermit:1,Nomad:1},B:{Nomad:1},C:{Drifter:1},D:{Guardian:2}},
   q8:{A:{Guardian:1},B:{Guardian:1},C:{Guardian:1},D:{Guardian:1},E:{Hermit:2}},
   q9:{A:{Hermit:1},B:{Drifter:1},C:{Passerby:1},D:{Guardian:2}},
   q10:{A:{Drifter:1,Hermit:1},B:{Guardian:1,Detached:1},C:{Guardian:2},D:{Drifter:2}},
   q11:{A:{Builder:1,Passerby:1},B:{Passerby:1,Guardian:1},C:{Passerby:1},D:{Drifter:1},E:{Hermit:1}},
-  q12:{A:{Passerby:1},B:{Drifter:1},C:{Drifter:1},D:{Passerby:1},E:{Nomad:1},F:{Passerby:1,Guardian:1},G:{}},
-  q14:{A:{Hermit:1,Passerby:1},B:{Guardian:1},C:{Builder:2},D:{Drifter:1},E:{Passerby:2},F:{Passerby:1,Hermit:1}},
+  q12:{A:{Passerby:2},
+  B:{Drifter:1},
+  C:{Drifter:1},
+  D:{Passerby:2},
+  E:{Passerby:3},
+  F:{Passerby:3,Guardian:1},
+  G:{}},
+  q14:{A:{Hermit:1,Passerby:1},B:{Guardian:1},C:{Builder:2},D:{Drifter:1},E:{Passerby:3},F:{Passerby:1,Hermit:1}},
   q15:{A:{Guardian:1},B:{Drifter:1},C:{Hermit:1},D:{Passerby:1},E:{Builder:1},F:{Hermit:1},G:{Passerby:1},H:{}},
-  q16:{A:{Hermit:2},B:{Passerby:1},C:{Builder:2},D:{Guardian:1}},
+  q16:{ A:{Hermit:4},
+  B:{Passerby:1},
+  C:{Builder:2},
+  D:{Guardian:1}},
   q17:{A:{Hermit:2},B:{Hermit:1},C:{Passerby:1},D:{Builder:1},E:{Builder:2}},
   q18:{A:{Hermit:2},B:{Detached:1},C:{Passerby:1},D:{Guardian:1},E:{Guardian:2,Builder:1}},
-  q21:{A:{Guardian:2},B:{Guardian:1},C:{Detached:2},D:{Detached:1,Drifter:1},E:{Hermit:1,Drifter:1}},
-  q22:{A:{Detached:1},B:{Drifter:1},C:{Nomad:2},D:{Detached:1,Nomad:1},E:{Hermit:1},F:{Guardian:1,Detached:1},G:{}},
-  q23:{A:{Guardian:2},B:{Nomad:2},C:{Detached:2},D:{Drifter:1,Hermit:1}},
-  q24:{1:{Guardian:1},2:{Guardian:1},3:{Passerby:1,Guardian:1},4:{Guardian:1},5:{Guardian:1},6:{Nomad:1,Passerby:1}},
-  q25:{A:{Guardian:2,Builder:1},B:{Guardian:1},C:{Drifter:1},D:{Hermit:1},E:{Hermit:2}},
+  q21:{ A:{Guardian:1},
+  B:{Detached:1,Guardian:1},
+  C:{Detached:3},
+  D:{Detached:2},
+  E:{Drifter:1,Hermit:1}},
+  q22:{A:{Detached:1},
+  B:{Drifter:1},
+  C:{Nomad:4},
+  D:{Nomad:2,Detached:1},
+  E:{Hermit:2},
+  F:{Guardian:1},
+  G:{}},
+  q23:{A:{Guardian:1,Builder:1},
+  B:{Nomad:2},
+  C:{Detached:2},
+  D:{Drifter:3,Hermit:1}},
+  q24:{1:{Guardian:0.6,Builder:0.4},
+  2:{Guardian:0.5,Passerby:0.5},
+  3:{Passerby:1},
+  4:{Guardian:0.6,Detached:0.4},
+  5:{Builder:1},
+  6:{Nomad:1,Passerby:1}},
+  q25:{A:{Guardian:1,Builder:2},
+  B:{Guardian:0.5,Detached:0.5},
+  C:{Drifter:1},
+  D:{Hermit:1},
+  E:{Hermit:2}},
 };
 
 // ===== STATE =====
@@ -430,6 +478,9 @@ function calcResult(){
       if(SC.q24)for(const rid in r24){const b=SC.q24[rid];if(b){const f=r24[rid]/3;for(const k in b)if(scores[k]!==undefined)scores[k]+=Math.round(b[k]*f*10)/10}}
     }
   }
+for(const k in scores){
+  scores[k]+=Math.random()*0.8;
+}
   let maxScore=-1,code='Drifter';
   typeKeys.forEach(k=>{if(scores[k]>maxScore){maxScore=scores[k];code=k;}});
   showResult(code);
@@ -488,26 +539,61 @@ const STORAGE_KEY='nct_responses';
 function getResponses(){
   try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[];}catch(e){return[];}
 }
-function saveResponse(code){
+async function saveResponse(code){
+
   const responses=getResponses();
+
   const record={
     id:Date.now(),
     time:new Date().toLocaleString('zh-CN'),
     code:code,
     scores:{...scores},
   };
+
   for(let i=0;i<QS.length;i++){
     const key='q'+i;
-    if(ans[key]!==undefined) record[key]=Array.isArray(ans[key])?ans[key].join(','):(ans[key]||'');
-    else record[key]='';
-  }
-  record.ratings={...r24};
-  const openEl=document.getElementById('openInput');
-  if(openEl) record.q25_open=openEl.value;
-  responses.push(record);
-  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(responses));}catch(e){}
-}
 
+    if(ans[key]!==undefined){
+      record[key]=Array.isArray(ans[key])
+        ? ans[key].join(',')
+        : (ans[key]||'');
+    }else{
+      record[key]='';
+    }
+  }
+
+  record.ratings={...r24};
+
+  const openEl=document.getElementById('openInput');
+
+  if(openEl){
+    record.q25_open=openEl.value;
+  }
+
+  responses.push(record);
+
+  try{
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(responses)
+    );
+
+    await supabaseClient
+    .from('nct_test_results')
+    .insert([{
+      result_code: code,
+      scores: scores,
+      answers: ans,
+      ratings: r24
+    }]);
+
+  }catch(e){
+
+    console.error(e);
+
+  }
+}
 // ===== CSV EXPORT =====
 function exportCSV(){
   const data=getResponses();
@@ -662,35 +748,5 @@ function showAdmin(){
 
 showIntro();
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
-
-const client = supabase.createClient(
-  'https://kwxhzcrzhswgrxfuyjpv.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3eGh6Y3J6aHN3Z3J4ZnV5anB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NDA0MzksImV4cCI6MjA5NTUxNjQzOX0.XZ3yjbLOLae5oknq3WBNBPfVgmZbDOS6125nP7mjLOo'
-)
-
-async function saveTest(){
-
-  const { data, error } = await client
-    .from('test_sessions')
-    .insert([
-      {
-        result_type:'测试人格'
-      }
-    ])
-    
-
-  console.log('data:', data)
-  console.log('error:', error)
-
-}
-
-saveTest()
-
-</script>
-
 </body>
 </html>
