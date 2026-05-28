@@ -551,14 +551,19 @@ async function saveResponse(code){
   };
 
   for(let i=0;i<QS.length;i++){
+
     const key='q'+i;
 
     if(ans[key]!==undefined){
+
       record[key]=Array.isArray(ans[key])
         ? ans[key].join(',')
-        : (ans[key]||'');
+        : (ans[key] || '');
+
     }else{
+
       record[key]='';
+
     }
   }
 
@@ -579,14 +584,18 @@ async function saveResponse(code){
       JSON.stringify(responses)
     );
 
-    await supabaseClient
-    .from('nct_test_results')
-    .insert([{
-      result_code: code,
-      scores: scores,
-      answers: ans,
-      ratings: r24
-    }]);
+    const { error } = await supabaseClient
+      .from('nct.test_results')
+      .insert([{
+        result_code: code,
+        scores: scores,
+        answers: ans,
+        ratings: r24
+      }]);
+
+    if(error){
+      console.error(error);
+    }
 
   }catch(e){
 
