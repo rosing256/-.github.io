@@ -667,14 +667,14 @@ showIntro();
 
 <script>
 
-const supabase = window.supabase.createClient(
+const supabaseClient = supabase.createClient(
   'https://kwxhzcrzhswgrxfuyjpv.supabase.co',
   'sb_publishable_gfWt8YQtpZ_P7VA4iAhwJQ_Jx9J6xrZ'
 )
 
 async function testDB(){
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('test_sessions')
     .insert([
       {
